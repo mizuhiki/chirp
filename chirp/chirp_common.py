@@ -244,6 +244,8 @@ def parse_power(powerstr):
 
 def parse_freq(freqstr):
     """Parse a frequency string and return the value in integral Hz"""
+    if type(freqstr) in (int, float):
+        return freqstr
     freqstr = freqstr.strip()
     if freqstr == "":
         return 0
@@ -297,7 +299,10 @@ class Memory:
     duplex = ""
     offset = 600000
     mode = "FM"
+    bandwidth = 'W'
     tuning_step = 5.0
+    freq2 = 0
+    name2 = ""
 
     comment = ""
 
@@ -327,7 +332,10 @@ class Memory:
         self.duplex = ""
         self.offset = 600000
         self.mode = "FM"
+        self.bandwidth = "W"
         self.tuning_step = 5.0
+        self.freq2 = 0
+        self.name2 = ""
 
         self.comment = ""
 
@@ -403,7 +411,8 @@ class Memory:
                   "CrossMode",
                   "Mode", "TStep",
                   "Skip", "Power", "Comment",
-                  "URCALL", "RPT1CALL", "RPT2CALL", "DVCODE"]
+                  "URCALL", "RPT1CALL", "RPT2CALL", "DVCODE",
+                  "SubName", "SubFrequency",]
 
     def __setattr__(self, name, val):
         if not hasattr(self, name):
@@ -492,7 +501,10 @@ class Memory:
             "%s" % self.skip,
             "%s" % self.power,
             "%s" % self.comment,
-            "", "", "", ""]
+            "", "", "", "",
+            "%s" % self.name2,
+            format_freq(self.freq2),
+        ]
 
     @classmethod
     def _from_csv(cls, _line):
@@ -849,6 +861,7 @@ class RadioFeatures:
         "has_rx_dtcs":          BOOLEAN,
         "has_dtcs_polarity":    BOOLEAN,
         "has_mode":             BOOLEAN,
+        "has_bandwidth":        BOOLEAN,
         "has_offset":           BOOLEAN,
         "has_name":             BOOLEAN,
         "has_bank":             BOOLEAN,
@@ -861,9 +874,12 @@ class RadioFeatures:
         "has_comment":          BOOLEAN,
         "has_settings":         BOOLEAN,
         "has_variable_power":   BOOLEAN,
+        "has_freq2":            BOOLEAN,
+        "has_name2":            BOOLEAN,
 
         # Attributes
         "valid_modes":          LIST,
+        "valid_bandwidths":     LIST,
         "valid_tmodes":         LIST,
         "valid_duplexes":       LIST,
         "valid_tuning_steps":   LIST,
@@ -930,6 +946,8 @@ class RadioFeatures:
                   "Indicates that the DTCS polarity can be changed")
         self.init("has_mode", True,
                   "Indicates that multiple emission modes are supported")
+        self.init("has_bandwidth", False,
+                  "Indicates that multiple bandwidth are supported")
         self.init("has_offset", True,
                   "Indicates that the TX offset memory property is supported")
         self.init("has_name", True,
@@ -960,9 +978,15 @@ class RadioFeatures:
         self.init("has_variable_power", False,
                   "Indicates the radio supports any power level between the "
                   "min and max in valid_power_levels")
+        self.init("has_freq2", False,
+                  "Indicates that the radio supports sub frequency")
+        self.init("has_name2", False,
+                  "Indicates that the radios supports sub name")
 
         self.init("valid_modes", list(MODES),
                   "Supported emission (or receive) modes")
+        self.init("valid_bandwidths", ["W", "N"],
+                  "Supported bandwidths")
         self.init("valid_tmodes", [],
                   "Supported tone squelch modes")
         self.init("valid_duplexes", ["", "+", "-"],
@@ -1086,8 +1110,8 @@ class RadioFeatures:
                     break
             if not valid:
                 msg = ValidationError(
-                    ("Frequency {freq} is out "
-                     "of supported range").format(freq=format_freq(mem.freq)))
+                    _("Frequency {freq} is out "
+                      "of supported range").format(freq=format_freq(mem.freq)))
                 msgs.append(msg)
 
         if self.valid_bands and \
@@ -1944,7 +1968,8 @@ def is_version_newer(version):
             _, stamp = v.split('-', 1)
             ver = (int(stamp),)
         elif '.' in v:
-            ver = tuple(int(p) for p in v.split('.'))
+            _, stamp = v.split('-', 1)
+            ver = tuple(int(p) for p in stamp.split('.'))
         else:
             ver = (0,)
         LOG.debug('Parsed version %r to %r' % (v, ver))

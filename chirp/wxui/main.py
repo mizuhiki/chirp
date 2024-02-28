@@ -416,6 +416,14 @@ class ChirpMain(wx.Frame):
         if d and os.path.isdir(d):
             chirp_platform.get_platform().set_last_dir(d)
 
+        # RX-JP custom config -------------------------------------------------
+        if not CONF.is_defined('north_america', 'bandplan'):
+            CONF.set_bool('north_america', False, 'bandplan')
+            CONF.set_bool('iaru_r3', True, 'bandplan')
+        if not CONF.is_defined('', 'state'):
+            CONF.set_bool('expand_extra', True, 'state')
+        # ---------------------------------------------------------------------
+
         self.SetMenuBar(self.make_menubar())
 
         # Stock items look good on linux, terrible on others,
@@ -830,7 +838,7 @@ class ChirpMain(wx.Frame):
         upload_item.SetAccel(wx.AcceleratorEntry(updownmod, ord('U')))
         self.Bind(wx.EVT_MENU, self._menu_upload, upload_item)
         radio_menu.Append(upload_item)
-
+        """
         source_menu = wx.Menu()
         radio_menu.AppendSubMenu(source_menu, _('Query Source'))
 
@@ -851,7 +859,7 @@ class ChirpMain(wx.Frame):
                                      'przemienniki.net')
         self.Bind(wx.EVT_MENU, self._menu_query_prz, query_prz_item)
         source_menu.Append(query_prz_item)
-
+        """
         radio_menu.Append(wx.MenuItem(radio_menu, wx.ID_SEPARATOR))
 
         auto_edits = wx.MenuItem(radio_menu, wx.NewId(),
@@ -918,7 +926,7 @@ class ChirpMain(wx.Frame):
                   developer_menu)
         help_menu.Append(developer_menu)
         developer_menu.Check(CONF.get_bool('developer', 'state'))
-
+        """
         reporting_menu = wx.MenuItem(help_menu, wx.NewId(),
                                      _('Reporting enabled'),
                                      kind=wx.ITEM_CHECK)
@@ -927,7 +935,7 @@ class ChirpMain(wx.Frame):
                   reporting_menu)
         help_menu.Append(reporting_menu)
         reporting_menu.Check(not CONF.get_bool('no_report', default=False))
-
+        """
         if logger.Logger.instance.has_debug_log_file:
             # Only expose these debug log menu elements if we are logging to
             # a debug.log file this session.
@@ -1794,7 +1802,7 @@ def display_update_notice(version):
 
     CONF.set_int("last_update_check", int(time.time()), "state")
 
-    url = 'https://chirp.danplanet.com/projects/chirp/wiki/ChirpNextBuild'
+    url = 'https://weboo.dev/posts/chirp-for-uv-k5-rx-jp/'
     msg = _('A new CHIRP version is available. Please visit the '
             'website as soon as possible to download it!')
     d = wx.MessageDialog(None, msg, _('New version available'),

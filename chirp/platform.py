@@ -145,7 +145,7 @@ class UnixPlatform(Platform):
     def __init__(self, basepath):
         if not basepath:
             basepath = os.path.join(self.default_dir(),
-                                    ".chirp")
+                                    ".chirp-rxjp")
 
         Path(basepath).mkdir(exist_ok=True)
         super().__init__(str(basepath))
@@ -192,7 +192,7 @@ class Win32Platform(Platform):
             appdata = os.getenv("APPDATA")
             if not appdata:
                 appdata = "C:\\"
-            basepath = os.path.abspath(os.path.join(appdata, "CHIRP"))
+            basepath = os.path.abspath(os.path.join(appdata, "CHIRP-RXJP"))
 
         if not os.path.isdir(basepath):
             try:

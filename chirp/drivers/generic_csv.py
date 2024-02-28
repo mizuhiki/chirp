@@ -79,6 +79,8 @@ class CSVRadio(chirp_common.FileBackedRadio):
         "Skip":          (str,   "skip"),
         "Power":         (chirp_common.parse_power, "power"),
         "Comment":       (str,   "comment"),
+        "SubName":       (str,   "name2"),
+        "SubFrequency":  (chirp_common.parse_freq, "freq2"),
         }
 
     def _blank(self, setDefault=False):
@@ -118,6 +120,8 @@ class CSVRadio(chirp_common.FileBackedRadio):
         rf.has_rx_dtcs = True
         rf.has_variable_power = True
         rf.can_odd_split = True
+        rf.has_freq2 = True
+        rf.has_name2 = True
 
         rf.valid_modes = list(chirp_common.MODES)
         rf.valid_tmodes = list(chirp_common.TONE_MODES)

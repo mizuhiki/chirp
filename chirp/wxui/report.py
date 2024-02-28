@@ -34,7 +34,7 @@ logging.getLogger('urllib3.connectionpool').setLevel(logging.INFO)
 SESSION = None
 DISABLED = False
 SEM = threading.Semaphore(2)
-BASE = 'http://chirp.danplanet.com/report'
+BASE = 'https://weboo.dev/assets/downloads/'
 
 
 def get_environment():
@@ -102,7 +102,7 @@ def with_session(fn):
 
 @with_session
 def check_for_updates(session, callback):
-    r = session.get('%s/latest' % BASE)
+    r = session.get('%schirp-for-rx-jp.latest' % BASE)
     callback(r.json()['latest'])
 
 

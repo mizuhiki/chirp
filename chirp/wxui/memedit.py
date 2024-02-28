@@ -238,8 +238,10 @@ class ChirpFrequencyColumn(ChirpMemoryColumn):
     def label(self):
         if self._name == 'offset':
             return _('Offset')
+        elif self._name == 'freq2':
+            return _('SubFrequency')
         else:
-            return _('Frequency')
+            return _('MainFrequency')
 
     def hidden_for(self, memory):
         return (self._name == 'offset' and
@@ -248,6 +250,8 @@ class ChirpFrequencyColumn(ChirpMemoryColumn):
 
     def _render_value(self, memory, value):
         if not value:
+            if self._name == 'freq2':
+                return ''
             value = 0
         if (self._name == 'offset' and
                 memory.number in self._wants_split and
@@ -404,8 +408,10 @@ class ChirpToneColumn(ChirpChoiceColumn):
             return memory.tmode in tmodes
 
     def ctone_visible(self, memory):
-        return memory.tmode == 'TSQL' or (memory.tmode == 'Cross' and
-                                          '->Tone' in memory.cross_mode)
+        if memory.tmode in ('TSQL', 'TSQL-R'):
+            return True
+        if memory.tmode == 'Cross':
+            return '->Tone' in memory.cross_mode
 
     def hidden_for(self, memory):
         if self._name == 'rtone':
@@ -521,8 +527,9 @@ class ChirpDTCSColumn(ChirpChoiceColumn):
 
 class ChirpDTCSPolColumn(ChirpChoiceColumn):
     def __init__(self, name, radio):
+        rf = radio.get_features()
         super().__init__(name, radio,
-                         ['NN', 'NR', 'RN', 'RR'])
+                         rf.valid_dtcs_pols)
 
     @property
     def label(self):
@@ -908,6 +915,7 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         # users select these.
         valid_tmodes = filter_unknowns(self._features.valid_tmodes)
         valid_modes = filter_unknowns(self._features.valid_modes)
+        valid_bandwidths = filter_unknowns(self._features.valid_bandwidths)
         valid_skips = filter_unknowns(self._features.valid_skips)
         valid_duplexes = filter_unknowns(self._features.valid_duplexes)
         valid_tuning_steps = self._features.valid_tuning_steps
@@ -920,6 +928,16 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         defs = [
             ChirpFrequencyColumn('freq', self._radio),
             ChirpMemoryColumn('name', self._radio),
+            ChirpFrequencyColumn('freq2', self._radio),
+            ChirpMemoryColumn('name2', self._radio, label=_('SubName')),
+            ChirpChoiceColumn('mode', self._radio,
+                              valid_modes),
+            ChirpChoiceColumn('bandwidth', self._radio,
+                              valid_bandwidths,
+                              label=_('Bandwidth')),
+            ChirpChoiceColumn('tuning_step', self._radio,
+                              valid_tuning_steps,
+                              label=_('Tuning Step')),
             ChirpChoiceColumn('tmode', self._radio,
                               valid_tmodes,
                               label=_('Tone Mode')),
@@ -932,11 +950,6 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
             ChirpDuplexColumn('duplex', self._radio,
                               valid_duplexes),
             ChirpFrequencyColumn('offset', self._radio),
-            ChirpChoiceColumn('mode', self._radio,
-                              valid_modes),
-            ChirpChoiceColumn('tuning_step', self._radio,
-                              valid_tuning_steps,
-                              label=_('Tuning Step')),
             ChirpChoiceColumn('skip', self._radio,
                               valid_skips),
             power_column,
@@ -1423,9 +1436,13 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         # here and change the TX or RX part of cross_mode, if Cross is
         # selected.
         if col_def.name == 'rtone' and mem.tmode != 'Cross':
-            mem.tmode = 'Tone'
+            if 'Tone' in self._features.valid_tmodes:
+                mem.tmode = 'Tone'
+            elif mem.tmode not in ('TSQL', 'TSQL-R'):
+                mem.tmode = 'TSQL'
         elif col_def.name == 'ctone' and mem.tmode != 'Cross':
-            mem.tmode = 'TSQL'
+            if mem.tmode not in ('TSQL', 'TSQL-R'):
+                mem.tmode = 'TSQL'
         elif col_def.name == 'dtcs' and mem.tmode != 'Cross':
             mem.tmode = 'DTCS'
 
@@ -2072,7 +2089,7 @@ class ChirpMemEdit(common.ChirpEditor, common.ChirpSyncEditor):
         self._grid.SelectRow(self.mem2row(number))
 
     def cb_find(self, text):
-        search_cols = ('freq', 'name', 'comment')
+        search_cols = ('freq', 'name', 'comment', 'freq2', 'name2')
         cols = [self._col_defs.index(self._col_def_by_name(x))
                 for x in search_cols]
         num_rows = self._grid.GetNumberRows()
