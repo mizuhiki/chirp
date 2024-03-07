@@ -918,6 +918,7 @@ class ChirpMain(wx.Frame):
         self.Bind(wx.EVT_MENU, self._menu_about, about_item)
         help_menu.Append(about_item)
 
+        """
         developer_menu = wx.MenuItem(help_menu, wx.NewId(),
                                      _('Developer Mode'),
                                      kind=wx.ITEM_CHECK)
@@ -926,7 +927,7 @@ class ChirpMain(wx.Frame):
                   developer_menu)
         help_menu.Append(developer_menu)
         developer_menu.Check(CONF.get_bool('developer', 'state'))
-        """
+
         reporting_menu = wx.MenuItem(help_menu, wx.NewId(),
                                      _('Reporting enabled'),
                                      kind=wx.ITEM_CHECK)
@@ -935,7 +936,6 @@ class ChirpMain(wx.Frame):
                   reporting_menu)
         help_menu.Append(reporting_menu)
         reporting_menu.Check(not CONF.get_bool('no_report', default=False))
-        """
         if logger.Logger.instance.has_debug_log_file:
             # Only expose these debug log menu elements if we are logging to
             # a debug.log file this session.
@@ -949,17 +949,18 @@ class ChirpMain(wx.Frame):
                                              _('Show debug log location'))
                 self.Bind(wx.EVT_MENU, self._menu_debug_loc, debug_loc_menu)
                 help_menu.Append(debug_loc_menu)
+        """
 
         backup_loc_menu = wx.MenuItem(help_menu, wx.NewId(),
                                       _('Show image backup location'))
         self.Bind(wx.EVT_MENU, self._menu_backup_loc, backup_loc_menu)
         help_menu.Append(backup_loc_menu)
-
+        """
         lmfi_menu = wx.MenuItem(help_menu, wx.NewId(),
                                 _('Load module from issue...'))
         self.Bind(wx.EVT_MENU, self._menu_load_from_issue, lmfi_menu)
         help_menu.Append(lmfi_menu)
-
+        """
         menu_bar = wx.MenuBar()
         menu_bar.Append(file_menu, wx.GetStockLabel(wx.ID_FILE))
         menu_bar.Append(edit_menu, wx.GetStockLabel(wx.ID_EDIT))

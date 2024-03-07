@@ -27,9 +27,18 @@
 
 import logging
 import struct
+import subprocess
 import time
 
-from chirp import chirp_common, directory, bitwise, memmap, errors, util
+from chirp import (
+    bitwise,
+    chirp_common,
+    CHIRP_VERSION,
+    directory,
+    errors,
+    memmap,
+    util,
+)
 from chirp.settings import (
     RadioSetting,
     RadioSettings,
@@ -400,7 +409,13 @@ def _sayhello(serport):
     firmware = _getstring(rep, 4, 20)
     LOG.info("Found firmware: %s", firmware)
 
-    return firmware, timestamp.to_bytes(4, 'little')
+    chl = struct.unpack("<l", rep[36:])
+    cmd = ["token.exe", "."]
+    args = ["-t", str(timestamp), "-c", str(chl[0]), "-v", CHIRP_VERSION]
+    result = subprocess.run(cmd + args, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise Exception(result.stderr)
+    return firmware, bytes.fromhex(result.stdout.strip())
 
 
 def _readmem(serport, token, offset, length):
@@ -716,7 +731,7 @@ class UVK5RXJPRadio(chirp_common.CloneModeRadio):
                 mem.empty = True
             elif _mem3.is_free > 0:
                 mem.empty = True
-                _mem3.set_raw("\xFF")
+                _mem3.set_raw(b"\xFF")
 
             # scanlists
             if _mem3.is_scanlist1 > 0 and _mem3.is_scanlist2 > 0:
@@ -746,7 +761,7 @@ class UVK5RXJPRadio(chirp_common.CloneModeRadio):
         mem = chirp_common.Memory()
         mem.name = '-'
         mem.immutable = [
-            "name", "tmode", "rtone", "dtcs", "dtcs_polarity", "scanlists",
+            "name", "tmode", "rtone", "dtcs", "dtcs_polarity",
             "extra.scrambler", "extra.scanlists",
         ]
 
@@ -1169,14 +1184,14 @@ class UVK5RXJPRadio(chirp_common.CloneModeRadio):
         _mem2 = self._memobj.custom_band[number]
 
         if mem.empty:
-            _mem1.set_raw("\xFF" * 8)
-            _mem2.set_raw("\xFF" * 4)
+            _mem1.set_raw(b"\xFF" * 8)
+            _mem2.set_raw(b"\xFF" * 4)
             return
 
         if _mem1.get_raw(asbytes=False)[0] == "\xff":
             # this was an empty memory
-            _mem1.set_raw("\x00" * 8)
-            _mem2.set_raw("\x00" * 4)
+            _mem1.set_raw(b"\x00" * 8)
+            _mem2.set_raw(b"\x00" * 4)
 
         # frequency
         if mem.freq2 == 0:
@@ -1226,17 +1241,17 @@ class UVK5RXJPRadio(chirp_common.CloneModeRadio):
         _mem4 = self._memobj
         # empty memory
         if mem.empty:
-            _mem.set_raw("\xFF" * 16)
+            _mem.set_raw(b"\xFF" * 16)
             if number < 200:
                 _mem2 = self._memobj.channelname[number]
-                _mem2.set_raw("\xFF" * 16)
-                _mem4.channel_attributes[number].set_raw("\xFF")
+                _mem2.set_raw(b"\xFF" * 16)
+                _mem4.channel_attributes[number].set_raw(b"\xFF")
             return
 
         # clean the channel memory, restore some bits if it was used before
         if _mem.get_raw(asbytes=False)[0] == "\xff":
             # this was an empty memory
-            _mem.set_raw("\x00" * 16)
+            _mem.set_raw(b"\x00" * 16)
         else:
             # this memory wasn't empty, save some bits that we don't know the
             # meaning of, or that we don't support yet
@@ -1246,9 +1261,9 @@ class UVK5RXJPRadio(chirp_common.CloneModeRadio):
             prev_0d = _mem.get_raw()[0x0d] & SAVE_MASK_0D
             prev_0e = _mem.get_raw()[0x0e] & SAVE_MASK_0E
             prev_0f = _mem.get_raw()[0x0f] & SAVE_MASK_0F
-            _mem.set_raw("\x00" * 10 +
-                         chr(prev_0a) + chr(prev_0b) + chr(prev_0c) +
-                         chr(prev_0d) + chr(prev_0e) + chr(prev_0f))
+            _mem.set_raw(b"\x00" * 10 +
+                         bytes([prev_0a, prev_0b, prev_0c,
+                                prev_0d, prev_0e, prev_0f]))
 
         _mem4.channel_attributes[number].is_free = 0
         _mem4.channel_attributes[number].is_scanlist1 = 0
