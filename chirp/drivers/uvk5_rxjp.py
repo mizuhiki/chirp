@@ -763,9 +763,14 @@ class UVK5RXJPRadio(chirp_common.CloneModeRadio):
     def _get_custom_band_memory(self, number2):
         mem = chirp_common.Memory()
         mem.name = '-'
+        """
         mem.immutable = [
-            "name", "tmode", "rtone", "dtcs", "dtcs_polarity",
+           "name", "tmode", "rtone", "dtcs", "dtcs_polarity", "scanlists",
             "extra.scrambler", "extra.scanlists",
+        ]
+        """
+        mem.immutable = [
+           "name", "tmode", "rtone", "dtcs", "dtcs_polarity"
         ]
 
         if isinstance(number2, str):
